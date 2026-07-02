@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     steps:
       - name: Checkout code
@@ -48,14 +48,55 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper/
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle-wrapper.properties') }}
+            ~/.gradle/wrapper/dists
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle-wrapper.properties') }}-${{ hashFiles('**/gradle-wrapper.jar') }}
           restore-keys: ${{ runner.os }}-gradle-
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Install Android SDK components & accept licenses
+        env:
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+        run: |
+          set -e
+          # ensure sdkmanager exists
+          if [ -x "${ANDROID_SDK_ROOT}/tools/bin/sdkmanager" ]; then
+            SDKMANAGER=${ANDROID_SDK_ROOT}/tools/bin/sdkmanager
+          elif [ -x "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" ]; then
+            SDKMANAGER=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager
+          else
+            echo "sdkmanager not found in expected locations; listing $ANDROID_SDK_ROOT"
+            ls -la "$ANDROID_SDK_ROOT" || true
+            exit 1
+          fi
+          echo "Using sdkmanager at: $SDKMANAGER"
+          # install minimal components — adjust api level/build-tools to match your project (e.g., 33)
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          yes | "$SDKMANAGER" --licenses --sdk_root="$ANDROID_SDK_ROOT"
+
+      - name: Export Android SDK env vars
+        run: |
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT}" >> $GITHUB_ENV
+          echo "ANDROID_HOME=${ANDROID_SDK_ROOT}" >> $GITHUB_ENV
+          echo "PATH=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:$PATH" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT set to ${ANDROID_SDK_ROOT}"
+
       - name: Ensure gradlew is executable
         run: chmod +x ./gradlew
+
+      - name: Gradle diagnostics
+        run: |
+          ./gradlew --version || true
+
+      - name: Create release keystore (from secret)
+        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          echo "Creating release keystore from secret"
+          echo "$KEYSTORE_B64" | base64 --decode > release.keystore
+          ls -l release.keystore
 
       - name: Clean project
         run: ./gradlew clean --no-daemon -Dorg.gradle.daemon=false
@@ -66,14 +107,34 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease --no-daemon -Dorg.gradle.daemon=false
 
+      - name: Check Debug APK
+        id: check-debug
+        run: |
+          if [ -f app/build/outputs/apk/debug/app-debug.apk ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload Debug APK
+        if: steps.check-debug.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
+      - name: Check Release APK
+        id: check-release
+        run: |
+          if [ -f app/build/outputs/apk/release/app-release-unsigned.apk ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload Release APK
+        if: steps.check-release.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: app-release

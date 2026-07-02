@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0A0F1C"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/titre"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DJK Clean"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:textColor="#F2EDE6"
+        android:layout_marginBottom="16dp" />
+
+    <EditText
+        android:id="@+id/barre_recherche"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Rechercher"
+        android:inputType="text"
+        android:singleLine="true"
+        android:textColor="#F2EDE6"
+        android:textColorHint="#8894A6"
+        android:background="#171F30"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp" />
+
+    <TextView
+        android:id="@+id/statut_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Prêt."
+        android:textSize="13sp"
+        android:textColor="#99A3B3"
+        android:layout_marginBottom="12dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <Button
+        android:id="@+id/bouton_nettoyer"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Nettoyer"
+        android:textColor="#0A0F1C"
+        android:backgroundTint="#F2A93B"
+        android:layout_marginBottom="12dp" />
+
+    <Button
+        android:id="@+id/bouton_restaurer"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Restaurer"
+        android:textColor="#0A0F1C"
+        android:backgroundTint="#3DD9A1"
+        android:visibility="gone" />
+
+</LinearLayout>

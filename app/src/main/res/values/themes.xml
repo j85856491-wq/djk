@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.DJKClean" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#F2A93B</item>
+        <item name="colorPrimaryDark">#0A0F1C</item>
+        <item name="colorAccent">#3DD9A1</item>
+        <item name="android:windowBackground">#0A0F1C</item>
+    </style>
+</resources>
